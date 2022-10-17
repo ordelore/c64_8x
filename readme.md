@@ -1,0 +1,1 @@
+To run this on a calculator, it is intended for the user to have a copy of a Commodore 64 Kernal and Basic ROM, which must be converted to AppVars called C64KERN and C64BASIC

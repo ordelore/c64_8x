@@ -1,0 +1,3 @@
+[submodule "src/chips"]
+	path = src/chips
+	url = https://github.com/floooh/chips.git
