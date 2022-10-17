@@ -17,8 +17,10 @@ cpu_t init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     cpu.y = 0;
     cpu.p = 0;
     cpu.pc = 0;
-    ti_Read(cpu.memory.basic_rom, sizeof(uint8_t), 8192, basic_fp);
-    ti_Read(cpu.memory.kernal_rom, sizeof(uint8_t), 8192, kern_fp);
+    cpu.memory.basic_rom = ti_GetDataPtr(basic_fp);
+    cpu.memory.kernal_rom = ti_GetDataPtr(kern_fp);
+    // ti_Read(cpu.memory.basic_rom, sizeof(uint8_t), 8192, basic_fp);
+    // ti_Read(cpu.memory.kernal_rom, sizeof(uint8_t), 8192, kern_fp);
     return cpu;
 }
 
