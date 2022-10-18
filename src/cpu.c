@@ -7,18 +7,19 @@ const uint8_t B = 0x10; //0001 0000
 const uint8_t V = 0x40; //0100 0000
 const uint8_t N = 0x80; //1000 0000
 
-cpu_t init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
-    cpu_t cpu;
-    cpu.a = 0;
-    cpu.i = 0;
-    cpu.ir = 0;
-    cpu.s = 0;
-    cpu.x = 0;
-    cpu.y = 0;
-    cpu.p = 0;
-    cpu.pc = 0;
-    cpu.memory.basic_rom = ti_GetDataPtr(basic_fp);
-    cpu.memory.kernal_rom = ti_GetDataPtr(kern_fp);
+cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
+    cpu_t *cpu = malloc(sizeof(cpu));
+    cpu->a = 0;
+    cpu->i = 0;
+    cpu->ir = 0;
+    cpu->s = 0;
+    cpu->x = 0;
+    cpu->y = 0;
+    cpu->p = 0;
+    cpu->pc = 0;
+    cpu->memory->memory = malloc(sizeof(0x10000));
+    cpu->memory->basic_rom = ti_GetDataPtr(basic_fp);
+    cpu->memory->kernal_rom = ti_GetDataPtr(kern_fp);
     // ti_Read(cpu.memory.basic_rom, sizeof(uint8_t), 8192, basic_fp);
     // ti_Read(cpu.memory.kernal_rom, sizeof(uint8_t), 8192, kern_fp);
     return cpu;
