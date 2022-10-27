@@ -1,6 +1,7 @@
 #include <stdint.h>
 typedef struct mem {
-    uint8_t *memory;
+    uint8_t *memorya;
+    uint8_t *memoryb;
     uint8_t *basic_rom;
     uint8_t *kernal_rom;
 } mem_t;
