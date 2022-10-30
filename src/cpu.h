@@ -16,7 +16,6 @@ typedef struct cpu
     uint16_t pc;
     mem_t *memory;
     uint8_t trace;
-    uint16_t addr;
 } cpu_t;
 cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp);
 uint8_t step_cpu(cpu_t *cpu);
