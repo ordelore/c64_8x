@@ -1,6 +1,6 @@
 #include "cpu.h"
-#define HI(X) ((((X) & 0xF0) >> 4) & 0xF)
-#define LO(X) ((X) & 0xF)
+#define LO(X) ((((X) & 0xF0) >> 4) & 0xF)
+#define HI(X) ((X) & 0xF)
 
 const uint8_t C = 0x01; //0000 0001
 const uint8_t Z = 0x02; //0000 0010
@@ -11,7 +11,7 @@ const uint8_t V = 0x40; //0100 0000
 const uint8_t N = 0x80; //1000 0000
 
 cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
-    cpu_t *cpu = (cpu_t *)calloc(1, sizeof(cpu_t));
+    static cpu_t cpu;
     static mem_t memory;
     uint8_t rama_fp = ti_Open("C64RAMA", "w+");
     uint8_t ramb_fp = ti_Open("C64RAMB", "w+");
@@ -21,9 +21,9 @@ cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     memory.memoryb = (uint8_t *)ti_GetDataPtr(ramb_fp);
     memory.basic_rom = (uint8_t *)ti_GetDataPtr(basic_fp);
     memory.kernal_rom = (uint8_t *)ti_GetDataPtr(kern_fp);
-    cpu->memory = &memory;
-    cpu->trace = 1;
-    return cpu;
+    cpu.memory = &memory;
+    cpu.trace = 1;
+    return &cpu;
 }
 
 void load_sample_program(cpu_t *cpu) {
@@ -61,6 +61,7 @@ void cpu_start(cpu_t *cpu) {
     cpu->pc = mem_peek2(cpu->memory, 0xFFFC);
 }
 
+// memory addressing functions
 uint16_t cpu_imm(cpu_t *cpu) {
     uint16_t imm = cpu->pc;
     cpu->pc++;
@@ -121,6 +122,7 @@ uint16_t cpu_indy(cpu_t *cpu) {
     return indy;
 }
 
+// flag functions
 uint8_t flagget(cpu_t *cpu, uint8_t flag) {
     return flag & cpu->p;
 }
@@ -132,7 +134,38 @@ void flagset(cpu_t *cpu, uint8_t flag, uint8_t status) {
         cpu->p &= ~flag;
     }
 }
+// stack operations
+void cpu_push(cpu_t *cpu, uint8_t b) {
+    dbg_printf("\nPushing: %d\n", b);
+    mem_poke(cpu->memory, 0x100+cpu->s, b);
+    cpu->s--;
+}
 
+uint8_t cpu_pull(cpu_t *cpu) {
+    cpu->s++;
+    dbg_printf("\nPulling: %d\n", mem_peek(cpu->memory, 0x100+cpu->s));
+    return mem_peek(cpu->memory, 0x100+cpu->s);
+}
+
+// branching instructions
+void cpu_bfs(cpu_t *cpu, uint8_t flag) {
+    // this can be made branchfree by multiplying mem_peek by flagget()
+    if (flagget(cpu, flag)) {
+        cpu->pc = cpu->pc + ((int8_t)mem_peek(cpu->memory, cpu->pc)) + 1;
+    } else {
+        cpu->pc++;
+    }
+}
+
+void cpu_bfc(cpu_t *cpu, uint8_t flag) {
+    if (flagget(cpu, flag)) {
+        cpu->pc++;
+    } else {
+        cpu->pc = cpu->pc + ((int8_t) mem_peek(cpu->memory, cpu->pc)) + 1;
+    }
+}
+
+// cpu instructions
 void cpu_lda(cpu_t *cpu, uint16_t addr) {
     cpu->a = mem_peek(cpu->memory, addr);
     flagset(cpu, Z, cpu->a == 0);
@@ -176,35 +209,8 @@ void cpu_adc(cpu_t *cpu, uint16_t addr) {
     flagset(cpu, V, (h > 0xFF) | (h < 0));
 }
 
-void cpu_push(cpu_t *cpu, uint8_t b) {
-    mem_poke(cpu->memory, 0x100+cpu->s, b);
-    cpu->s--;
-}
-
-uint8_t cpu_pull(cpu_t *cpu) {
-    cpu->s++;
-    return mem_peek(cpu->memory, 0x100+cpu->s);
-}
-
 void cpu_jmp(cpu_t *cpu, uint16_t addr) {
     cpu->pc = addr;
-}
-
-void cpu_bfs(cpu_t *cpu, uint8_t flag) {
-    // this can be made branchfree by multiplying mem_peek by flagget()
-    if (flagget(cpu, flag)) {
-        cpu->pc = cpu->pc + ((int8_t)mem_peek(cpu->memory, cpu->pc)) + 1;
-    } else {
-        cpu->pc++;
-    }
-}
-
-void cpu_bfc(cpu_t *cpu, uint8_t flag) {
-    if (flagget(cpu, flag)) {
-        cpu->pc++;
-    } else {
-        cpu->pc = cpu->pc + ((int8_t) mem_peek(cpu->memory, cpu->pc)) + 1;
-    }
 }
 
 void cpu_jsr(cpu_t *cpu, uint16_t addr) {
@@ -231,6 +237,7 @@ void cpu_asl(cpu_t *cpu, uint16_t addr) {
     uint8_t b = mem_peek(cpu->memory, addr);
     flagset(cpu, C, b & 0x80);
     b = b << 1;
+    mem_poke(cpu->memory, addr, b);
     flagset(cpu, Z, b == 0);
     flagset(cpu, N, b >= 0x80);
 }
@@ -299,13 +306,13 @@ void cpu_inc_(cpu_t *cpu, uint16_t addr) {
 }
 
 void cpu_inx(cpu_t *cpu) {
-    cpu->x = cpu->x + 1;
+    cpu->x += 1;
     flagset(cpu, Z, cpu->x == 0);
     flagset(cpu, N, cpu->x >= 0x80);
 }
 
 void cpu_iny(cpu_t *cpu) {
-    cpu->y = cpu->y + 1;
+    cpu->y += 1;
     flagset(cpu, Z, cpu->y == 0);
     flagset(cpu, N, cpu->y >= 0x80);
 }
@@ -320,15 +327,16 @@ void cpu_lsr_A(cpu_t *cpu) {
     flagset(cpu, C, cpu->a & 0x01);
     cpu->a = cpu->a >> 1;
     flagset(cpu, Z, cpu->a == 0);
-    flagset(cpu, N, cpu->a >= 0x80);
+    flagset(cpu, N, 0);
 }
 
 void cpu_lsr(cpu_t *cpu, uint16_t addr) {
     uint8_t b = mem_peek(cpu->memory, addr);
     flagset(cpu, C, b & 0x01);
     b = b >> 1;
+    mem_poke(cpu->memory, addr, b);
     flagset(cpu, Z, b == 0);
-    flagset(cpu, N, b >= 0x80);
+    flagset(cpu, N, 0);
 }
 
 void cpu_ora(cpu_t *cpu, uint16_t addr) {
@@ -359,8 +367,8 @@ void cpu_rol(cpu_t *cpu, uint16_t addr) {
     uint8_t bit = flagget(cpu, C);
     flagset(cpu, C, b & 0x80);
     b = b << 1;
-    if (bit) {
-        b = b | 0x01;
+    if (!bit) {
+        b = 0x01;
     }
     mem_poke(cpu->memory, addr, b);
     flagset(cpu, Z, b == 0);
@@ -369,10 +377,10 @@ void cpu_rol(cpu_t *cpu, uint16_t addr) {
 
 void cpu_ror_A(cpu_t *cpu) {
     uint8_t bit = flagget(cpu, C);
-    flagset(cpu, C, cpu->a & 0x80);
+    flagset(cpu, C, cpu->a & 0x01);
     cpu->a = cpu->a >> 1;
     if (!bit) {
-        cpu->a = 0x1;
+        cpu->a = 0x80;
     }
     flagset(cpu, Z, cpu->a == 0);
     flagset(cpu, N, cpu->a >= 0x80);
@@ -381,10 +389,10 @@ void cpu_ror_A(cpu_t *cpu) {
 void cpu_ror(cpu_t *cpu, uint16_t addr) {
     uint8_t b = mem_peek(cpu->memory, addr);
     uint8_t bit = flagget(cpu, C);
-    flagset(cpu, C, b & 0x80);
+    flagset(cpu, C, b & 0x01);
     b = b >> 1;
-    if (bit) {
-        b = b | 0x01;
+    if (!bit) {
+        b = 0x80;
     }
     mem_poke(cpu->memory, addr, b);
     flagset(cpu, Z, b == 0);
