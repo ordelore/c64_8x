@@ -1,6 +1,8 @@
 #include "cpu.h"
-#define LO(X) ((((X) & 0xF0) >> 4) & 0xF)
-#define HI(X) ((X) & 0xF)
+#define HI_8(X) ((((X) & 0xF0) >> 4) & 0xF)
+#define LO_8(X) ((X) & 0xF)
+#define HI_16(X) ((((X) & 0xFF00) >> 8) & 0xFF)
+#define LO_16(X) ((X) & 0xFF)
 
 const uint8_t C = 0x01; //0000 0001
 const uint8_t Z = 0x02; //0000 0010
@@ -22,7 +24,7 @@ cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     memory.basic_rom = (uint8_t *)ti_GetDataPtr(basic_fp);
     memory.kernal_rom = (uint8_t *)ti_GetDataPtr(kern_fp);
     cpu.memory = &memory;
-    cpu.trace = 1;
+    cpu.trace = 0;
     return &cpu;
 }
 
@@ -37,10 +39,10 @@ void load_sample_program(cpu_t *cpu) {
     mem_poke(cpu->memory, 0xFFFD, 0xC0);
 }
 void cpu_starttrace(cpu_t *cpu) {
-    cpu->trace = 0;
+    cpu->trace = 1;
 }
 void cpu_stoptrace(cpu_t *cpu) {
-    cpu->trace = 1;
+    cpu->trace = 0;
 }
 void cpu_dump1(cpu_t *cpu) {
     dbg_printf("PC=%hX IR=%hhX",
@@ -136,14 +138,12 @@ void flagset(cpu_t *cpu, uint8_t flag, uint8_t status) {
 }
 // stack operations
 void cpu_push(cpu_t *cpu, uint8_t b) {
-    dbg_printf("\nPushing: %d\n", b);
     mem_poke(cpu->memory, 0x100+cpu->s, b);
     cpu->s--;
 }
 
 uint8_t cpu_pull(cpu_t *cpu) {
     cpu->s++;
-    dbg_printf("\nPulling: %d\n", mem_peek(cpu->memory, 0x100+cpu->s));
     return mem_peek(cpu->memory, 0x100+cpu->s);
 }
 
@@ -215,8 +215,8 @@ void cpu_jmp(cpu_t *cpu, uint16_t addr) {
 
 void cpu_jsr(cpu_t *cpu, uint16_t addr) {
     cpu->pc--;
-    cpu_push(cpu, HI(cpu->pc));
-    cpu_push(cpu, LO(cpu->pc));
+    cpu_push(cpu, HI_16(cpu->pc));
+    cpu_push(cpu, LO_16(cpu->pc));
     cpu->pc = addr;
 }
 
@@ -251,8 +251,8 @@ void cpu_bit(cpu_t *cpu, uint16_t addr) {
 
 void cpu_brk(cpu_t *cpu) {
     cpu->pc++;
-    cpu_push(cpu, (uint8_t) HI(cpu->pc));
-    cpu_push(cpu, (uint8_t) LO(cpu->pc));
+    cpu_push(cpu, (uint8_t) HI_16(cpu->pc));
+    cpu_push(cpu, (uint8_t) LO_16(cpu->pc));
     cpu->pc--;
     cpu_push(cpu, cpu->p);
     flagset(cpu, I, 0x1);
@@ -261,29 +261,29 @@ void cpu_brk(cpu_t *cpu) {
 void cpu_cmp(cpu_t *cpu, uint16_t addr) {
     uint8_t h = cpu->a - mem_peek(cpu->memory, addr);
     flagset(cpu, C, h <= 0xFF);
-    flagset(cpu, Z, LO(h) == 0);
-    flagset(cpu, N, LO(h) >= 0x80);
+    flagset(cpu, Z, LO_8(h) == 0);
+    flagset(cpu, N, LO_8(h) >= 0x80);
 }
 
 void cpu_cpx(cpu_t *cpu, uint16_t addr) {
     uint8_t h = cpu->x - mem_peek(cpu->memory, addr);
     flagset(cpu, C, h <= 0xFF);
-    flagset(cpu, Z, LO(h) == 0);
-    flagset(cpu, N, LO(h) >= 0x80);
+    flagset(cpu, Z, LO_8(h) == 0);
+    flagset(cpu, N, LO_8(h) >= 0x80);
 }
 
 void cpu_cpy(cpu_t *cpu, uint16_t addr) {
     uint8_t h = cpu->y - mem_peek(cpu->memory, addr);
     flagset(cpu, C, h <= 0xFF);
-    flagset(cpu, Z, LO(h) == 0x0);
-    flagset(cpu, N, LO(h) >= 0x80);
+    flagset(cpu, Z, LO_8(h) == 0x0);
+    flagset(cpu, N, LO_8(h) >= 0x80);
 }
 
 void cpu_dec_(cpu_t *cpu, uint16_t addr) {
     uint8_t h = mem_peek(cpu->memory, addr) - 1;
     mem_poke(cpu->memory, addr, h);
-    flagset(cpu, Z, LO(h) == 0x0);
-    flagset(cpu, N, LO(h) >= 0x80);
+    flagset(cpu, Z, LO_8(h) == 0x0);
+    flagset(cpu, N, LO_8(h) >= 0x80);
 }
 
 void cpu_dex(cpu_t *cpu) {
@@ -301,8 +301,8 @@ void cpu_dey(cpu_t *cpu) {
 void cpu_inc_(cpu_t *cpu, uint16_t addr) {
     uint8_t h = mem_peek(cpu->memory, addr) + 1;
     mem_poke(cpu->memory, addr, h);
-    flagset(cpu, Z, LO(h) == 0);
-    flagset(cpu, N, LO(h) >= 0x80);
+    flagset(cpu, Z, LO_8(h) == 0);
+    flagset(cpu, N, LO_8(h) >= 0x80);
 }
 
 void cpu_inx(cpu_t *cpu) {
@@ -458,14 +458,14 @@ void cpu_txs(cpu_t *cpu) {
 }
 
 uint8_t step_cpu(cpu_t *cpu) {
+    if (cpu->pc == 0xFD9A) {
+        cpu_starttrace(cpu);
+    }
     cpu->ir = mem_peek(cpu->memory, cpu->pc);
     if (cpu->trace) {
         cpu_dump1(cpu);
     }
     cpu->pc++;
-    if (cpu->pc == 0xFD9A) {
-        cpu_starttrace(cpu);
-    }
     switch (cpu->ir) {
     case(0x00): {cpu_brk(cpu); break;}
     case(0x01): {cpu_ora(cpu, cpu_indx(cpu)); break;}
