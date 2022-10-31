@@ -24,6 +24,7 @@ cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     memory.basic_rom = (uint8_t *)ti_GetDataPtr(basic_fp);
     memory.kernal_rom = (uint8_t *)ti_GetDataPtr(kern_fp);
     cpu.memory = &memory;
+    // if you want to enable tracing from the start of execution, set this to 1
     cpu.trace = 0;
     return &cpu;
 }
