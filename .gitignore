@@ -3,3 +3,5 @@ chips
 .vscode
 bin
 obj
+autorun.zsh
+trace.txt

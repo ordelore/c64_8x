@@ -1,3 +1,5 @@
+#ifndef MEMORY_H
+#define MEMORY_H
 #include <stdint.h>
 typedef struct mem {
     uint8_t *memorya;
@@ -8,3 +10,4 @@ typedef struct mem {
 void mem_poke(mem_t *mem, uint16_t address, uint8_t value);
 uint8_t mem_peek(mem_t *mem, uint16_t address);
 uint16_t mem_peek2(mem_t *mem, uint16_t address);
+#endif

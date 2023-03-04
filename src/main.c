@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "cpu.h"
-
+#include "graphics.h"
 
 /* Main function, called first */
 int main(void)
@@ -23,11 +23,12 @@ int main(void)
     cpu_t *cpu = init_cpu(kernal, basic);
 
     cpu_start(cpu);
-    dump_cpu(cpu);
+    graphics_init();
     do {} while (!step_cpu(cpu));
     dump_cpu(cpu);
     ti_Close(kernal);
     ti_Close(basic);
+    graphics_close();
 
     return 0;
 }

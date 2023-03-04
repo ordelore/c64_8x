@@ -1,10 +1,14 @@
 #include "memory.h"
+#include "graphics.h"
 #include <debug.h>
 void mem_poke(mem_t *mem, uint16_t address, uint8_t value) {
     if (address >= 0x8000) {
         mem->memoryb[address - 0x8000] = value;
     } else {
         mem->memorya[address] = value;
+    }
+    if ((address <= 0x7e7) && (address >= 0x400)) {
+        vic_text(mem, address - 0x400, value);
     }
 }
 uint8_t io(uint16_t address) {
