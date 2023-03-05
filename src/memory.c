@@ -12,6 +12,10 @@ void mem_poke(mem_t *mem, uint16_t address, uint8_t value) {
     }
 }
 uint8_t io(uint16_t address) {
+    if (address == 0xD012)
+    {
+        return 0x00;
+    }
     return 0xFF;
 }
 uint8_t mem_peek(mem_t *mem, uint16_t address) {

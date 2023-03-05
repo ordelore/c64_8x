@@ -25,7 +25,7 @@ cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     memory.kernal_rom = (uint8_t *)ti_GetDataPtr(kern_fp);
     cpu.memory = &memory;
     // if you want to enable tracing from the start of execution, set this to 1
-    cpu.trace = 1;
+    cpu.trace = 0;
     return &cpu;
 }
 
@@ -451,8 +451,9 @@ void cpu_txs(cpu_t *cpu) {
 }
 
 uint8_t step_cpu(cpu_t *cpu) {
-    if (cpu->pc == 0xFD9A) {
-        return 1;
+    // wait for the C64 to start scanning the keyboard before printing the trace
+    if (cpu->pc == 0xE5CD) {
+        cpu_starttrace(cpu);
     }
     cpu->ir = mem_peek(cpu->memory, cpu->pc);
     if (cpu->trace) {
@@ -460,156 +461,156 @@ uint8_t step_cpu(cpu_t *cpu) {
     }
     cpu->pc++;
     switch (cpu->ir) {
-    case(0x00): {cpu_brk(cpu); break;}
-    case(0x01): {cpu_ora(cpu, cpu_indx(cpu)); break;}
-    case(0x05): {cpu_ora(cpu, cpu_zp(cpu)); break;}
-    case(0x06): {cpu_asl(cpu, cpu_zp(cpu)); break;}
-    case(0x08): {cpu_push(cpu, cpu->p); break;}
-    case(0x09): {cpu_ora(cpu, cpu_imm(cpu)); break;}
-    case(0x0A): {cpu_asl_A(cpu); break;}
-    case(0x0D): {cpu_ora(cpu, cpu_abs(cpu)); break;}
-    case(0x0E): {cpu_asl(cpu, cpu_abs(cpu)); break;}
-    case(0x10): {cpu_bfc(cpu, N); break;} //bpl
-    case(0x11): {cpu_ora(cpu, cpu_indy(cpu)); break;}
-    case(0x15): {cpu_ora(cpu, cpu_zpx(cpu)); break;}
-    case(0x16): {cpu_asl(cpu, cpu_zpx(cpu)); break;}
-    case(0x18): {setflag(cpu, C, 0); break;} //clc
-    case(0x19): {cpu_ora(cpu, cpu_absy(cpu)); break;}
-    case(0x1D): {cpu_ora(cpu, cpu_absx(cpu)); break;}
-    case(0x1E): {cpu_asl(cpu, cpu_absx(cpu)); break;}
-    case(0x20): {cpu_jsr(cpu, cpu_abs(cpu)); break;}
-    case(0x29): {cpu_and_(cpu, cpu_imm(cpu)); break;}
-    case(0x21): {cpu_and_(cpu, cpu_indx(cpu)); break;}
-    case(0x24): {cpu_bit(cpu, cpu_zp(cpu)); break;}
-    case(0x25): {cpu_and_(cpu, cpu_zp(cpu)); break;}
-    case(0x26): {cpu_rol(cpu, cpu_zp(cpu)); break;}
-    case(0x28): {cpu_pull(cpu); break;} //plp
-    case(0x2A): {cpu_rol_A(cpu); break;}
-    case(0x2C): {cpu_bit(cpu, cpu_abs(cpu)); break;}
-    case(0x2D): {cpu_and_(cpu, cpu_abs(cpu)); break;}
-    case(0x2E): {cpu_rol(cpu, cpu_abs(cpu)); break;}
-    case(0x30): {cpu_bfs(cpu, N); break;} //bmi
-    case(0x31): {cpu_and_(cpu, cpu_indy(cpu)); break;}
-    case(0x35): {cpu_and_(cpu, cpu_zpx(cpu)); break;}
-    case(0x36): {cpu_rol(cpu, cpu_zpx(cpu)); break;}
-    case(0x38): {setflag(cpu, C, 1); break;}     //sec
-    case(0x39): {cpu_and_(cpu, cpu_absy(cpu)); break;}
-    case(0x3D): {cpu_and_(cpu, cpu_absx(cpu)); break;}
-    case(0x3E): {cpu_rol(cpu, cpu_absx(cpu)); break;}
-    case(0x40): {cpu_rti(cpu); break;}
-    case(0x41): {cpu_eor(cpu, cpu_indx(cpu)); break;}
-    case(0x45): {cpu_eor(cpu, cpu_zp(cpu)); break;}
-    case(0x46): {cpu_lsr(cpu, cpu_zp(cpu)); break;}
-    case(0x48): {cpu_push(cpu, cpu->a); break;} //pha
-    case(0x49): {cpu_eor(cpu, cpu_imm(cpu)); break;}
-    case(0x4A): {cpu_lsr_A(cpu); break;}
-    case(0x4C): {cpu_jmp(cpu, cpu_abs(cpu)); break;}
-    case(0x4D): {cpu_eor(cpu, cpu_abs(cpu)); break;}
-    case(0x4E): {cpu_lsr(cpu, cpu_abs(cpu)); break;}
-    case(0x50): {cpu_bfc(cpu, V); break;} //bvc
-    case(0x51): {cpu_eor(cpu, cpu_indy(cpu)); break;}
-    case(0x55): {cpu_eor(cpu, cpu_zpx(cpu)); break;}
-    case(0x56): {cpu_lsr(cpu, cpu_zpx(cpu)); break;}
-    case(0x58): {setflag(cpu, I, 0); break;} //cli
-    case(0x59): {cpu_eor(cpu, cpu_absy(cpu)); break;}
-    case(0x5D): {cpu_eor(cpu, cpu_absx(cpu)); break;}
-    case(0x5E): {cpu_lsr(cpu, cpu_absx(cpu)); break;}
-    case(0x60): {cpu_rts(cpu); break;}
-    case(0x61): {cpu_adc(cpu, cpu_indx(cpu)); break;}
-    case(0x65): {cpu_adc(cpu, cpu_zp(cpu)); break;}
-    case(0x66): {cpu_ror(cpu, cpu_zp(cpu)); break;}
-    case(0x68): {cpu_pla(cpu); break;}
-    case(0x69): {cpu_adc(cpu, cpu_imm(cpu)); break;}
-    case(0x6A): {cpu_ror_A(cpu); break;}
-    case(0x6C): {cpu_jmp(cpu, cpu_ind(cpu)); break;}
-    case(0x6D): {cpu_adc(cpu, cpu_abs(cpu)); break;}
-    case(0x6E): {cpu_ror(cpu, cpu_abs(cpu)); break;}
-    case(0x70): {cpu_bfs(cpu, V); break;} //bvs
-    case(0x71): {cpu_adc(cpu, cpu_indy(cpu)); break;}
-    case(0x75): {cpu_adc(cpu, cpu_zpx(cpu)); break;}
-    case(0x76): {cpu_ror(cpu, cpu_zpx(cpu)); break;}
-    case(0x78): {setflag(cpu, I, 1); break;}     //sei
-    case(0x79): {cpu_adc(cpu, cpu_absy(cpu)); break;}
-    case(0x7D): {cpu_adc(cpu, cpu_absx(cpu)); break;}
-    case(0x7E): {cpu_ror(cpu, cpu_absx(cpu)); break;}
-    case(0x81): {cpu_sta(cpu, cpu_indx(cpu)); break;}
-    case(0x84): {cpu_sty(cpu, cpu_zp(cpu)); break;}
-    case(0x85): {cpu_sta(cpu, cpu_zp(cpu)); break;}
-    case(0x86): {cpu_stx(cpu, cpu_zp(cpu)); break;}
-    case(0x88): {cpu_dey(cpu); break;}
-    case(0x8A): {cpu_txa(cpu); break;}
-    case(0x8C): {cpu_sty(cpu, cpu_abs(cpu)); break;}
-    case(0x8D): {cpu_sta(cpu, cpu_abs(cpu)); break;}
-    case(0x8E): {cpu_stx(cpu, cpu_abs(cpu)); break;}
-    case(0x90): {cpu_bfc(cpu, C); break;} //bcc
-    case(0x91): {cpu_sta(cpu, cpu_indy(cpu)); break;}
-    case(0x94): {cpu_sty(cpu, cpu_zpx(cpu)); break;}
-    case(0x95): {cpu_sta(cpu, cpu_zpx(cpu)); break;}
-    case(0x96): {cpu_stx(cpu, cpu_zpy(cpu)); break;}
-    case(0x98): {cpu_tya(cpu); break;}
-    case(0x99): {cpu_sta(cpu, cpu_absy(cpu)); break;}
-    case(0x9A): {cpu_txs(cpu); break;}
-    case(0x9D): {cpu_sta(cpu, cpu_absx(cpu)); break;}
-    case(0xA0): {cpu_ldy(cpu, cpu_imm(cpu)); break;}
-    case(0xA1): {cpu_lda(cpu, cpu_indx(cpu)); break;}
-    case(0xA2): {cpu_ldx(cpu, cpu_imm(cpu)); break;}
-    case(0xA4): {cpu_ldy(cpu, cpu_zp(cpu)); break;}
-    case(0xA5): {cpu_lda(cpu, cpu_zp(cpu)); break;}
-    case(0xA6): {cpu_ldx(cpu, cpu_zp(cpu)); break;}
-    case(0xA8): {cpu_tay(cpu); break;}
-    case(0xA9): {cpu_lda(cpu, cpu_imm(cpu)); break;}
-    case(0xAA): {cpu_tax(cpu); break;}
-    case(0xAC): {cpu_ldy(cpu, cpu_abs(cpu)); break;}
-    case(0xAD): {cpu_lda(cpu, cpu_abs(cpu)); break;}
-    case(0xAE): {cpu_ldx(cpu, cpu_abs(cpu)); break;}
-    case(0xB0): {cpu_bfs(cpu, C); break;} //bcs
-    case(0xB1): {cpu_lda(cpu, cpu_indy(cpu)); break;}
-    case(0xB4): {cpu_ldy(cpu, cpu_zpx(cpu)); break;}
-    case(0xB5): {cpu_lda(cpu, cpu_zpx(cpu)); break;}
-    case(0xB6): {cpu_ldx(cpu, cpu_zpy(cpu)); break;}
-    case(0xB8): {setflag(cpu, V, 0); break;} //clv
-    case(0xB9): {cpu_lda(cpu, cpu_absy(cpu)); break;}
-    case(0xBA): {cpu_tsx(cpu); break;}
-    case(0xBC): {cpu_ldy(cpu, cpu_absx(cpu)); break;}
-    case(0xBD): {cpu_lda(cpu, cpu_absx(cpu)); break;}
-    case(0xBE): {cpu_ldx(cpu, cpu_absy(cpu)); break;}
-    case(0xC0): {cpu_cpy(cpu, cpu_imm(cpu)); break;}
-    case(0xC1): {cpu_cmp(cpu, cpu_indx(cpu)); break;}
-    case(0xC4): {cpu_cpy(cpu, cpu_zp(cpu)); break;}
-    case(0xC5): {cpu_cmp(cpu, cpu_zp(cpu)); break;}
-    case(0xC6): {cpu_dec_(cpu, cpu_zp(cpu)); break;}
-    case(0xC8): {cpu_iny(cpu); break;}
-    case(0xC9): {cpu_cmp(cpu, cpu_imm(cpu)); break;}
-    case(0xCA): {cpu_dex(cpu); break;}
-    case(0xCC): {cpu_cpy(cpu, cpu_abs(cpu)); break;}
-    case(0xCD): {cpu_cmp(cpu, cpu_abs(cpu)); break;}
-    case(0xCE): {cpu_dec_(cpu, cpu_abs(cpu)); break;}
-    case(0xD0): {cpu_bfc(cpu, Z); break;} //bne
-    case(0xD1): {cpu_cmp(cpu, cpu_indy(cpu)); break;}
-    case(0xD5): {cpu_cmp(cpu, cpu_zpx(cpu)); break;}
-    case(0xD6): {cpu_dec_(cpu, cpu_zpx(cpu)); break;}
-    case(0xD8): {setflag(cpu, D, 0); break;} //cld
-    case(0xD9): {cpu_cmp(cpu, cpu_absy(cpu)); break;}
-    case(0xDD): {cpu_cmp(cpu, cpu_absx(cpu)); break;}
-    case(0xDE): {cpu_dec_(cpu, cpu_absx(cpu)); break;}
-    case(0xE0): {cpu_cpx(cpu, cpu_imm(cpu)); break;}
-    case(0xE1): {cpu_sbc(cpu, cpu_indx(cpu)); break;}
-    case(0xE4): {cpu_cpx(cpu, cpu_zp(cpu)); break;}
-    case(0xE5): {cpu_sbc(cpu, cpu_zp(cpu)); break;}
-    case(0xE6): {cpu_inc_(cpu, cpu_zp(cpu)); break;}
-    case(0xE8): {cpu_inx(cpu); break;}
-    case(0xE9): {cpu_sbc(cpu, cpu_imm(cpu)); break;}
-    case(0xEC): {cpu_cpx(cpu, cpu_abs(cpu)); break;}
-    case(0xED): {cpu_sbc(cpu, cpu_abs(cpu)); break;}
-    case(0xEE): {cpu_inc_(cpu, cpu_abs(cpu)); break;}
-    case(0xF0): {cpu_bfs(cpu, Z); break;} //beq
-    case(0xF1): {cpu_sbc(cpu, cpu_indy(cpu)); break;}
-    case(0xF5): {cpu_sbc(cpu, cpu_zpx(cpu)); break;}
-    case(0xF6): {cpu_inc_(cpu, cpu_zpx(cpu)); break;}
-    case(0xF8): {setflag(cpu, D, 1); break;}     //sed
-    case(0xF9): {cpu_sbc(cpu, cpu_absy(cpu)); break;}
-    case(0xFD): {cpu_sbc(cpu, cpu_absx(cpu)); break;}
-    case(0xFE): {cpu_inc_(cpu, cpu_absx(cpu)); break;}
+    case(0x00): {cpu_brk(cpu); break;} //0x00
+    case(0x01): {cpu_ora(cpu, cpu_indx(cpu)); break;} //0x01
+    case(0x05): {cpu_ora(cpu, cpu_zp(cpu)); break;} //0x05
+    case(0x06): {cpu_asl(cpu, cpu_zp(cpu)); break;} //0x06
+    case(0x08): {cpu_push(cpu, cpu->p); break;} //0x08
+    case(0x09): {cpu_ora(cpu, cpu_imm(cpu)); break;} //0x09
+    case(0x0A): {cpu_asl_A(cpu); break;} //0x0A
+    case(0x0D): {cpu_ora(cpu, cpu_abs(cpu)); break;} //0x0D
+    case(0x0E): {cpu_asl(cpu, cpu_abs(cpu)); break;} //0x0E
+    case(0x10): {cpu_bfc(cpu, N); break;} //bpl //0x10
+    case(0x11): {cpu_ora(cpu, cpu_indy(cpu)); break;} //0x11
+    case(0x15): {cpu_ora(cpu, cpu_zpx(cpu)); break;} //0x15
+    case(0x16): {cpu_asl(cpu, cpu_zpx(cpu)); break;} //0x16
+    case(0x18): {setflag(cpu, C, 0); break;} //clc //0x18
+    case(0x19): {cpu_ora(cpu, cpu_absy(cpu)); break;} //0x19
+    case(0x1D): {cpu_ora(cpu, cpu_absx(cpu)); break;} //0x1D
+    case(0x1E): {cpu_asl(cpu, cpu_absx(cpu)); break;} //0x1E
+    case(0x20): {cpu_jsr(cpu, cpu_abs(cpu)); break;} //0x20
+    case(0x29): {cpu_and_(cpu, cpu_imm(cpu)); break;} //0x29
+    case(0x21): {cpu_and_(cpu, cpu_indx(cpu)); break;} //0x21
+    case(0x24): {cpu_bit(cpu, cpu_zp(cpu)); break;} //0x24
+    case(0x25): {cpu_and_(cpu, cpu_zp(cpu)); break;} //0x25
+    case(0x26): {cpu_rol(cpu, cpu_zp(cpu)); break;} //0x26
+    case(0x28): {cpu_pull(cpu); break;} //plp //0x28
+    case(0x2A): {cpu_rol_A(cpu); break;} //0x2A
+    case(0x2C): {cpu_bit(cpu, cpu_abs(cpu)); break;} //0x2C
+    case(0x2D): {cpu_and_(cpu, cpu_abs(cpu)); break;} //0x2D
+    case(0x2E): {cpu_rol(cpu, cpu_abs(cpu)); break;} //0x2E
+    case(0x30): {cpu_bfs(cpu, N); break;} //bmi //0x30
+    case(0x31): {cpu_and_(cpu, cpu_indy(cpu)); break;} //0x31
+    case(0x35): {cpu_and_(cpu, cpu_zpx(cpu)); break;} //0x35
+    case(0x36): {cpu_rol(cpu, cpu_zpx(cpu)); break;} //0x36
+    case(0x38): {setflag(cpu, C, 1); break;}     //sec //0x38
+    case(0x39): {cpu_and_(cpu, cpu_absy(cpu)); break;} //0x39
+    case(0x3D): {cpu_and_(cpu, cpu_absx(cpu)); break;} //0x3D
+    case(0x3E): {cpu_rol(cpu, cpu_absx(cpu)); break;} //0x3E
+    case(0x40): {cpu_rti(cpu); break;} //0x40
+    case(0x41): {cpu_eor(cpu, cpu_indx(cpu)); break;} //0x41
+    case(0x45): {cpu_eor(cpu, cpu_zp(cpu)); break;} //0x45
+    case(0x46): {cpu_lsr(cpu, cpu_zp(cpu)); break;} //0x46
+    case(0x48): {cpu_push(cpu, cpu->a); break;} //pha //0x48
+    case(0x49): {cpu_eor(cpu, cpu_imm(cpu)); break;} //0x49
+    case(0x4A): {cpu_lsr_A(cpu); break;} //0x4A
+    case(0x4C): {cpu_jmp(cpu, cpu_abs(cpu)); break;} //0x4C
+    case(0x4D): {cpu_eor(cpu, cpu_abs(cpu)); break;} //0x4D
+    case(0x4E): {cpu_lsr(cpu, cpu_abs(cpu)); break;} //0x4E
+    case(0x50): {cpu_bfc(cpu, V); break;} //bvc //0x50
+    case(0x51): {cpu_eor(cpu, cpu_indy(cpu)); break;} //0x51
+    case(0x55): {cpu_eor(cpu, cpu_zpx(cpu)); break;} //0x55
+    case(0x56): {cpu_lsr(cpu, cpu_zpx(cpu)); break;} //0x56
+    case(0x58): {setflag(cpu, I, 0); break;} //cli //0x58
+    case(0x59): {cpu_eor(cpu, cpu_absy(cpu)); break;} //0x59
+    case(0x5D): {cpu_eor(cpu, cpu_absx(cpu)); break;} //0x5D
+    case(0x5E): {cpu_lsr(cpu, cpu_absx(cpu)); break;} //0x5E
+    case(0x60): {cpu_rts(cpu); break;} //0x60
+    case(0x61): {cpu_adc(cpu, cpu_indx(cpu)); break;} //0x61
+    case(0x65): {cpu_adc(cpu, cpu_zp(cpu)); break;} //0x65
+    case(0x66): {cpu_ror(cpu, cpu_zp(cpu)); break;} //0x66
+    case(0x68): {cpu_pla(cpu); break;} //0x68
+    case(0x69): {cpu_adc(cpu, cpu_imm(cpu)); break;} //0x69
+    case(0x6A): {cpu_ror_A(cpu); break;} //0x6A
+    case(0x6C): {cpu_jmp(cpu, cpu_ind(cpu)); break;} //0x6C
+    case(0x6D): {cpu_adc(cpu, cpu_abs(cpu)); break;} //0x6D
+    case(0x6E): {cpu_ror(cpu, cpu_abs(cpu)); break;} //0x6E
+    case(0x70): {cpu_bfs(cpu, V); break;} //bvs //0x70
+    case(0x71): {cpu_adc(cpu, cpu_indy(cpu)); break;} //0x71
+    case(0x75): {cpu_adc(cpu, cpu_zpx(cpu)); break;} //0x75
+    case(0x76): {cpu_ror(cpu, cpu_zpx(cpu)); break;} //0x76
+    case(0x78): {setflag(cpu, I, 1); break;}     //sei //0x78
+    case(0x79): {cpu_adc(cpu, cpu_absy(cpu)); break;} //0x79
+    case(0x7D): {cpu_adc(cpu, cpu_absx(cpu)); break;} //0x7D
+    case(0x7E): {cpu_ror(cpu, cpu_absx(cpu)); break;} //0x7E
+    case(0x81): {cpu_sta(cpu, cpu_indx(cpu)); break;} //0x81
+    case(0x84): {cpu_sty(cpu, cpu_zp(cpu)); break;} //0x84
+    case(0x85): {cpu_sta(cpu, cpu_zp(cpu)); break;} //0x85
+    case(0x86): {cpu_stx(cpu, cpu_zp(cpu)); break;} //0x86
+    case(0x88): {cpu_dey(cpu); break;} //0x88
+    case(0x8A): {cpu_txa(cpu); break;} //0x8A
+    case(0x8C): {cpu_sty(cpu, cpu_abs(cpu)); break;} //0x8C
+    case(0x8D): {cpu_sta(cpu, cpu_abs(cpu)); break;} //0x8D
+    case(0x8E): {cpu_stx(cpu, cpu_abs(cpu)); break;} //0x8E
+    case(0x90): {cpu_bfc(cpu, C); break;} //bcc //0x90
+    case(0x91): {cpu_sta(cpu, cpu_indy(cpu)); break;} //0x91
+    case(0x94): {cpu_sty(cpu, cpu_zpx(cpu)); break;} //0x94
+    case(0x95): {cpu_sta(cpu, cpu_zpx(cpu)); break;} //0x95
+    case(0x96): {cpu_stx(cpu, cpu_zpy(cpu)); break;} //0x96
+    case(0x98): {cpu_tya(cpu); break;} //0x98
+    case(0x99): {cpu_sta(cpu, cpu_absy(cpu)); break;} //0x99
+    case(0x9A): {cpu_txs(cpu); break;} //0x9A
+    case(0x9D): {cpu_sta(cpu, cpu_absx(cpu)); break;} //0x9D
+    case(0xA0): {cpu_ldy(cpu, cpu_imm(cpu)); break;} //0xA0
+    case(0xA1): {cpu_lda(cpu, cpu_indx(cpu)); break;} //0xA1
+    case(0xA2): {cpu_ldx(cpu, cpu_imm(cpu)); break;} //0xA2
+    case(0xA4): {cpu_ldy(cpu, cpu_zp(cpu)); break;} //0xA4
+    case(0xA5): {cpu_lda(cpu, cpu_zp(cpu)); break;} //0xA5
+    case(0xA6): {cpu_ldx(cpu, cpu_zp(cpu)); break;} //0xA6
+    case(0xA8): {cpu_tay(cpu); break;} //0xA8
+    case(0xA9): {cpu_lda(cpu, cpu_imm(cpu)); break;} //0xA9
+    case(0xAA): {cpu_tax(cpu); break;} //0xAA
+    case(0xAC): {cpu_ldy(cpu, cpu_abs(cpu)); break;} //0xAC
+    case(0xAD): {cpu_lda(cpu, cpu_abs(cpu)); break;} //0xAD
+    case(0xAE): {cpu_ldx(cpu, cpu_abs(cpu)); break;} //0xAE
+    case(0xB0): {cpu_bfs(cpu, C); break;} //bcs //0xB0
+    case(0xB1): {cpu_lda(cpu, cpu_indy(cpu)); break;} //0xB1
+    case(0xB4): {cpu_ldy(cpu, cpu_zpx(cpu)); break;} //0xB4
+    case(0xB5): {cpu_lda(cpu, cpu_zpx(cpu)); break;} //0xB5
+    case(0xB6): {cpu_ldx(cpu, cpu_zpy(cpu)); break;} //0xB6
+    case(0xB8): {setflag(cpu, V, 0); break;} //clv //0xB8
+    case(0xB9): {cpu_lda(cpu, cpu_absy(cpu)); break;} //0xB9
+    case(0xBA): {cpu_tsx(cpu); break;} //0xBA
+    case(0xBC): {cpu_ldy(cpu, cpu_absx(cpu)); break;} //0xBC
+    case(0xBD): {cpu_lda(cpu, cpu_absx(cpu)); break;} //0xBD
+    case(0xBE): {cpu_ldx(cpu, cpu_absy(cpu)); break;} //0xBE
+    case(0xC0): {cpu_cpy(cpu, cpu_imm(cpu)); break;} //0xC0
+    case(0xC1): {cpu_cmp(cpu, cpu_indx(cpu)); break;} //0xC1
+    case(0xC4): {cpu_cpy(cpu, cpu_zp(cpu)); break;} //0xC4
+    case(0xC5): {cpu_cmp(cpu, cpu_zp(cpu)); break;} //0xC5
+    case(0xC6): {cpu_dec_(cpu, cpu_zp(cpu)); break;} //0xC6
+    case(0xC8): {cpu_iny(cpu); break;} //0xC8
+    case(0xC9): {cpu_cmp(cpu, cpu_imm(cpu)); break;} //0xC9
+    case(0xCA): {cpu_dex(cpu); break;} //0xCA
+    case(0xCC): {cpu_cpy(cpu, cpu_abs(cpu)); break;} //0xCC
+    case(0xCD): {cpu_cmp(cpu, cpu_abs(cpu)); break;} //0xCD
+    case(0xCE): {cpu_dec_(cpu, cpu_abs(cpu)); break;} //0xCE
+    case(0xD0): {cpu_bfc(cpu, Z); break;} //bne //0xD0
+    case(0xD1): {cpu_cmp(cpu, cpu_indy(cpu)); break;} //0xD1
+    case(0xD5): {cpu_cmp(cpu, cpu_zpx(cpu)); break;} //0xD5
+    case(0xD6): {cpu_dec_(cpu, cpu_zpx(cpu)); break;} //0xD6
+    case(0xD8): {setflag(cpu, D, 0); break;} //cld //0xD8
+    case(0xD9): {cpu_cmp(cpu, cpu_absy(cpu)); break;} //0xD9
+    case(0xDD): {cpu_cmp(cpu, cpu_absx(cpu)); break;} //0xDD
+    case(0xDE): {cpu_dec_(cpu, cpu_absx(cpu)); break;} //0xDE
+    case(0xE0): {cpu_cpx(cpu, cpu_imm(cpu)); break;} //0xE0
+    case(0xE1): {cpu_sbc(cpu, cpu_indx(cpu)); break;} //0xE1
+    case(0xE4): {cpu_cpx(cpu, cpu_zp(cpu)); break;} //0xE4
+    case(0xE5): {cpu_sbc(cpu, cpu_zp(cpu)); break;} //0xE5
+    case(0xE6): {cpu_inc_(cpu, cpu_zp(cpu)); break;} //0xE6
+    case(0xE8): {cpu_inx(cpu); break;} //0xE8
+    case(0xE9): {cpu_sbc(cpu, cpu_imm(cpu)); break;} //0xE9
+    case(0xEC): {cpu_cpx(cpu, cpu_abs(cpu)); break;} //0xEC
+    case(0xED): {cpu_sbc(cpu, cpu_abs(cpu)); break;} //0xED
+    case(0xEE): {cpu_inc_(cpu, cpu_abs(cpu)); break;} //0xEE
+    case(0xF0): {cpu_bfs(cpu, Z); break;} //beq //0xF0
+    case(0xF1): {cpu_sbc(cpu, cpu_indy(cpu)); break;} //0xF1
+    case(0xF5): {cpu_sbc(cpu, cpu_zpx(cpu)); break;} //0xF5
+    case(0xF6): {cpu_inc_(cpu, cpu_zpx(cpu)); break;} //0xF6
+    case(0xF8): {setflag(cpu, D, 1); break;}     //sed //0xF8
+    case(0xF9): {cpu_sbc(cpu, cpu_absy(cpu)); break;} //0xF9
+    case(0xFD): {cpu_sbc(cpu, cpu_absx(cpu)); break;} //0xFD
+    case(0xFE): {cpu_inc_(cpu, cpu_absx(cpu)); break;} //0xFE
     default: return 1;
     }
     if (cpu->trace) {
