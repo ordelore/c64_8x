@@ -18,6 +18,7 @@ uint8_t io(uint16_t address) {
     }
     return 0xFF;
 }
+
 uint8_t mem_peek(mem_t *mem, uint16_t address) {
     if (address >= 0xE000) {
         return mem->kernal_rom[address - 0xE000];
