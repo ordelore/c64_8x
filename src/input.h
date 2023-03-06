@@ -2,5 +2,5 @@
 #define INPUT_H
 #include <stdlib.h>
 #include "memory.h"
-void scankey(cpu_t *cpu);
+uint8_t scankey(cpu_t *cpu);
 #endif

@@ -623,7 +623,10 @@ uint8_t step_cpu(cpu_t *cpu) {
     }
     cpu->counter--;
     if (cpu->counter == 0) {
-        scankey(cpu);
+        // returns 1 if ON is pressed
+        if (scankey(cpu)) {
+            return 1;
+        }
         gfx_SetTextXY(mem_peek(cpu->memory, 211) * 8 +8, mem_peek(cpu->memory, 214) * 8+8);
     }
     return 0;

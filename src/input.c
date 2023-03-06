@@ -151,7 +151,7 @@ uint8_t ti_key_to_64_key(uint8_t key, uint8_t k_2nd, uint8_t k_alpha) {
     return 0;
 }
 
-void scankey(cpu_t *cpu) {
+uint8_t scankey(cpu_t *cpu) {
     kb_Scan();
     uint8_t buff = mem_peek(cpu->memory, 0xC6);
     uint8_t pressed_key = 0;
@@ -171,7 +171,11 @@ void scankey(cpu_t *cpu) {
         mem_poke(cpu->memory, 0xC6, buff+1);
     }
     prev_key = pressed_key;
-
+    if (kb_On) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 // $48 : ch := 145; //up
