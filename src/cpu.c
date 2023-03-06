@@ -1,4 +1,7 @@
 #include "cpu.h"
+#include "input.h"
+#include <graphx.h>
+
 #define HI_8(X) ((((X) & 0xF0) >> 4) & 0xF)
 #define LO_8(X) ((X) & 0xF)
 #define HI_16(X) ((((X) & 0xFF00) >> 8) & 0xFF)
@@ -26,6 +29,7 @@ cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     cpu.memory = &memory;
     // if you want to enable tracing from the start of execution, set this to 1
     cpu.trace = 0;
+    cpu.counter = 0;
     return &cpu;
 }
 
@@ -452,9 +456,9 @@ void cpu_txs(cpu_t *cpu) {
 
 uint8_t step_cpu(cpu_t *cpu) {
     // wait for the C64 to start scanning the keyboard before printing the trace
-    if (cpu->pc == 0xE5CD) {
-        cpu_starttrace(cpu);
-    }
+    // if (cpu->pc == 0xE5CD) {
+    //     cpu_starttrace(cpu);
+    // }
     cpu->ir = mem_peek(cpu->memory, cpu->pc);
     if (cpu->trace) {
         cpu_dump1(cpu);
@@ -601,6 +605,7 @@ uint8_t step_cpu(cpu_t *cpu) {
     case(0xE8): {cpu_inx(cpu); break;} //0xE8
     case(0xE9): {cpu_sbc(cpu, cpu_imm(cpu)); break;} //0xE9
     case(0xEC): {cpu_cpx(cpu, cpu_abs(cpu)); break;} //0xEC
+    case(0xEA): {break;} //0xEA
     case(0xED): {cpu_sbc(cpu, cpu_abs(cpu)); break;} //0xED
     case(0xEE): {cpu_inc_(cpu, cpu_abs(cpu)); break;} //0xEE
     case(0xF0): {cpu_bfs(cpu, Z); break;} //beq //0xF0
@@ -615,6 +620,11 @@ uint8_t step_cpu(cpu_t *cpu) {
     }
     if (cpu->trace) {
         cpu_dump2(cpu);
+    }
+    cpu->counter--;
+    if (cpu->counter == 0) {
+        scankey(cpu);
+        gfx_SetTextXY(mem_peek(cpu->memory, 211) * 8 +8, mem_peek(cpu->memory, 214) * 8+8);
     }
     return 0;
 }
