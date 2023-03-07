@@ -26,8 +26,12 @@ void vic_text(mem_t *mem, uint16_t pos, uint8_t val) {
                 };
     gfx_SetTextXY((pos % 40) * 8, (pos / 40) * 8);
     if (val < 0x80) {
+        gfx_SetTextBGColor(0);
+        gfx_SetTextFGColor(0xFF);
         gfx_PrintChar(charset[val]);
     } else {
+        gfx_SetTextBGColor(0xFF);
+        gfx_SetTextFGColor(0);
         gfx_PrintChar(charset[val-0x80]);
     }
 }
