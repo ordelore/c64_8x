@@ -1,6 +1,7 @@
 #include "cpu.h"
 #include "input.h"
 #include <graphx.h>
+#include <time.h>
 
 #define HI_8(X) ((((X) & 0xF0) >> 4) & 0xF)
 #define LO_8(X) ((X) & 0xF)
@@ -14,6 +15,8 @@ const uint8_t D = 0x08; //0000 1000
 const uint8_t B = 0x10; //0001 0000
 const uint8_t V = 0x40; //0100 0000
 const uint8_t N = 0x80; //1000 0000
+
+const clock_t TIMER_STEP = 16;
 
 cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     static cpu_t cpu;
@@ -29,7 +32,8 @@ cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     cpu.memory = &memory;
     // if you want to enable tracing from the start of execution, set this to 1
     cpu.trace = 0;
-    cpu.counter = 0;
+    cpu.starttime = clock();
+    cpu.timer = 0;
     return &cpu;
 }
 
@@ -246,12 +250,14 @@ void cpu_bit(cpu_t *cpu, uint16_t addr) {
 }
 
 void cpu_brk(cpu_t *cpu) {
+    setflag(cpu, B,true);
     cpu->pc++;
     cpu_push(cpu, (uint8_t) HI_16(cpu->pc));
     cpu_push(cpu, (uint8_t) LO_16(cpu->pc));
     cpu->pc--;
     cpu_push(cpu, cpu->p);
     setflag(cpu, I, 0x1);
+    cpu->pc = mem_peek2(cpu->memory, 0xFFFE);
 }
 
 void cpu_cmp(cpu_t *cpu, uint16_t addr) {
@@ -454,6 +460,36 @@ void cpu_txs(cpu_t *cpu) {
     cpu->s = cpu->x;
 }
 
+uint8_t cpu_irq(cpu_t *cpu) {
+    if (!flagset(cpu, I)) {
+        setflag(cpu, B,false);
+        cpu_push(cpu, (uint8_t) HI_16(cpu->pc));
+        cpu_push(cpu, (uint8_t) LO_16(cpu->pc));
+        cpu_push(cpu, cpu->p);
+        setflag(cpu, I, true);
+        cpu->pc = mem_peek2(cpu->memory, 0xFFFE);
+        if (scankey(cpu)) {
+            return 1;
+        }
+    }
+    cpu->timer += TIMER_STEP;
+    return 0;
+}
+
+void cpu_nmi(cpu_t *cpu) {
+    setflag(cpu, B,false);
+    cpu_push(cpu, HI_16(cpu->pc));
+    cpu_push(cpu, LO_16(cpu->pc));
+    cpu_push(cpu, cpu->p);
+    setflag(cpu, I, true);
+    cpu->pc = mem_peek2(cpu->memory, 0xFFFA);
+}
+
+void cpu_reset(cpu_t *cpu) {
+    cpu->pc = mem_peek2(cpu->memory, 0xFFFC);
+    setflag(cpu, I, true);
+}
+
 uint8_t step_cpu(cpu_t *cpu) {
     // wait for the C64 to start scanning the keyboard before printing the trace
     // if (cpu->pc == 0xE5CD) {
@@ -621,13 +657,12 @@ uint8_t step_cpu(cpu_t *cpu) {
     if (cpu->trace) {
         cpu_dump2(cpu);
     }
-    cpu->counter--;
-    if (cpu->counter == 0) {
-        // returns 1 if ON is pressed
-        if (scankey(cpu)) {
+
+    if ((clock() - cpu->starttime) / CLOCKS_PER_SEC * 1000 > cpu->timer) {
+        if (cpu_irq(cpu)) {
             return 1;
         }
-        gfx_SetTextXY(mem_peek(cpu->memory, 211) * 8 +8, mem_peek(cpu->memory, 214) * 8+8);
     }
+
     return 0;
 }

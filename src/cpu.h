@@ -5,6 +5,7 @@
 #include <debug.h>
 #include <string.h>
 #include <fileioc.h>
+#include <time.h>
 #include "memory.h"
 typedef struct cpu
 {
@@ -18,7 +19,8 @@ typedef struct cpu
     uint16_t pc;
     mem_t *memory;
     uint8_t trace;
-    uint8_t counter;
+    clock_t starttime;
+    clock_t timer;
 } cpu_t;
 cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp);
 uint8_t step_cpu(cpu_t *cpu);

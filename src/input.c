@@ -166,7 +166,6 @@ uint8_t scankey(cpu_t *cpu) {
         }
     }
     if (pressed_key && (prev_key != pressed_key) && (buff < 10)) {
-        dbg_printf("Pressed %d %d %d\n", pressed_key, k_2nd, k_alpha);
         mem_poke(cpu->memory, 0x0277+buff, ti_key_to_64_key(pressed_key, k_2nd, k_alpha));
         mem_poke(cpu->memory, 0xC6, buff+1);
     }
