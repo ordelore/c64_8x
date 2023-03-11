@@ -19,8 +19,9 @@ int main(void)
     ti_Close(3);
     uint8_t kernal = ti_Open("C64KERN", "r");
     uint8_t basic = ti_Open("C64BASIC", "r");
+    uint8_t charset = ti_Open("C64CHAR", "r");
 
-    cpu_t *cpu = init_cpu(kernal, basic);
+    cpu_t *cpu = init_cpu(kernal, basic, charset);
 
     cpu_start(cpu);
     graphics_init();

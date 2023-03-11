@@ -119,7 +119,6 @@ uint8_t ti_key_to_64_key(uint8_t key, uint8_t k_2nd, uint8_t k_alpha) {
         }
     }
     if (k_alpha && !k_2nd) {
-        dbg_printf("Bananas!\n");
         switch (key)
         {
             case(sk_Left): {return 157;}

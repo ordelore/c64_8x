@@ -18,7 +18,7 @@ const uint8_t N = 0x80; //1000 0000
 
 const clock_t TIMER_STEP = 16;
 
-cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
+cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp, uint8_t char_fp) {
     static cpu_t cpu;
     static mem_t memory;
     uint8_t rama_fp = ti_Open("C64RAMA", "w+");
@@ -29,6 +29,7 @@ cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp) {
     memory.memoryb = (uint8_t *)ti_GetDataPtr(ramb_fp);
     memory.basic_rom = (uint8_t *)ti_GetDataPtr(basic_fp);
     memory.kernal_rom = (uint8_t *)ti_GetDataPtr(kern_fp);
+    memory.char_rom = (uint8_t *)ti_GetDataPtr(char_fp);
     cpu.memory = &memory;
     // if you want to enable tracing from the start of execution, set this to 1
     cpu.trace = 0;

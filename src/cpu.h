@@ -22,7 +22,7 @@ typedef struct cpu
     clock_t starttime;
     clock_t timer;
 } cpu_t;
-cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp);
+cpu_t *init_cpu(uint8_t kern_fp, uint8_t basic_fp, uint8_t char_fp);
 uint8_t step_cpu(cpu_t *cpu);
 void cpu_start(cpu_t *cpu);
 void dump_cpu(cpu_t *cpu);
