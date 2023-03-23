@@ -44,5 +44,5 @@ void vic_text(mem_t *mem, uint16_t pos, uint8_t val) {
             gfx_SetPixel(x0+x, y0+y);
         }
     }
-    gfx_BlitBuffer();
+    gfx_BlitRectangle(gfx_buffer, x0, y0, 8, 8);
 }
