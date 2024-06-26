@@ -117,8 +117,7 @@ uint8_t ti_key_to_64_key(uint8_t key, uint8_t k_2nd, uint8_t k_alpha) {
             case(sk_DecPnt): {return 58;}
             default: return 0;
         }
-    }
-    if (k_alpha && !k_2nd) {
+    } else if (k_alpha && !k_2nd) {
         switch (key)
         {
             case(sk_Left): {return 157;}
@@ -145,6 +144,26 @@ uint8_t ti_key_to_64_key(uint8_t key, uint8_t k_2nd, uint8_t k_alpha) {
             case(sk_LParen): {return 40;}
             case(sk_RParen): {return 41;}
             default: return 0;
+        }
+    } else if (k_2nd && !k_alpha) {
+        switch (key)
+        {
+            case sk_Comma: return '<';
+            case sk_DecPnt: return '>';
+            case sk_Div: return '?';
+        }
+    } else if (k_2nd && k_alpha) {
+        switch (key)
+        {
+            case sk_1: return '!';
+            case sk_2: return '"';
+            case sk_3: return '#';
+            case sk_4: return '$';
+            case sk_5: return '%';
+            case sk_6: return '&';
+            case sk_7: return '\'';
+            case sk_8: return '(';
+            case sk_9: return ')';
         }
     }
     return 0;
